@@ -53,10 +53,10 @@ def main() -> None:
         generator=torch.Generator().manual_seed(42),
     )
 
-    num_workers = 4
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, num_workers=num_workers)
-    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, num_workers=num_workers)
+    # num_workers=0: macOS spawn-based multiprocessing can't import packages in worker processes
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, num_workers=0)
+    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, num_workers=0)
 
     model = GenreCNN(n_classes=10).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
