@@ -5,5 +5,3 @@ __pycache__/
 dist/
 build/
 *.egg-info/
-
-/training_log.jsonl
