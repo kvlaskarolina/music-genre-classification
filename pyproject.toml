@@ -18,6 +18,9 @@ dependencies = [
 [project.scripts]
 music_genres = "music_genres.main:main"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/music_genres"]
+
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
