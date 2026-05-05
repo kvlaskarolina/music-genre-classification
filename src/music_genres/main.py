@@ -1,3 +1,4 @@
+import copy
 import json
 import torch
 import torchaudio.transforms as T
@@ -17,6 +18,7 @@ EPOCHS = 100
 LR = 1e-3
 VAL_SPLIT = 0.1
 TEST_SPLIT = 0.1
+PATIENCE = 10
 
 
 def build_transform() -> torch.nn.Module:
@@ -57,9 +59,13 @@ def main() -> None:
     test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, num_workers=num_workers)
 
     model = GenreCNN(n_classes=10).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=LR)
     criterion = torch.nn.CrossEntropyLoss()
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=EPOCHS)
+
+    best_val_loss = float("inf")
+    best_state_dict = copy.deepcopy(model.state_dict())
+    patience_counter = 0
 
     with open("training_log.jsonl", "w") as log:
         for epoch in range(1, EPOCHS + 1):
@@ -78,8 +84,21 @@ def main() -> None:
             }) + "\n")
             log.flush()
 
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
+                best_state_dict = copy.deepcopy(model.state_dict())
+            else:
+                patience_counter += 1
+                if patience_counter >= PATIENCE:
+                    print(f"Early stopping at epoch {epoch} (no improvement for {PATIENCE} epochs)")
+                    break
+
+    print("Training loop done.")
+
+    model.load_state_dict(best_state_dict)
     _, test_acc = evaluate(model, test_loader, criterion, device)
     print(f"\nTest accuracy: {test_acc:.3f}")
 
-    torch.save(model.state_dict(), "model.pt")
+    torch.save(best_state_dict, "model.pt")
     print("Saved model.pt")
