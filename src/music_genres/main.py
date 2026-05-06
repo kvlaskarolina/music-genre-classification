@@ -85,10 +85,14 @@ def main_main(
                 train_loss, train_acc = train_epoch(model, train_loader, optimizer, criterion, device)
                 val_loss, val_acc = evaluate(model, val_loader, criterion, device)
                 scheduler.step()
+
+                new_best = val_loss < best_val_loss
+
                 print(
                     f"Epoch {epoch:3d}/{EPOCHS}  "
                     f"train loss={train_loss:.4f} acc={train_acc:.3f}  "
                     f"val loss={val_loss:.4f} acc={val_acc:.3f}"
+                    f"{' *' if new_best else ''}"
                 )
                 log.write(json.dumps({
                     "epoch": epoch,
@@ -111,6 +115,10 @@ def main_main(
 
         torch.save(best_state_dict, "model.pt")
         print("Saved model.pt")
+
+        # load the best weights back
+        model.load_state_dict(best_state_dict)
+        model.to(device)
     
     if should_test:
         print("Evaluating on test set...")
