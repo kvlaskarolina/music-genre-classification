@@ -3,7 +3,8 @@ import json
 import torch
 import torchaudio.transforms as T
 import sys
-from torch.utils.data import DataLoader, random_split
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
 
 from music_genres.dataset import (
     SAMPLE_RATE,
@@ -41,15 +42,17 @@ def main_main(
     files = load_files(root)
     print(f"Found {len(files)} tracks across 10 genres")
 
-    dataset = GTZANDataset(files, transform=build_transform())
-    n = len(dataset)
-    n_val = int(n * VAL_SPLIT)
-    n_test = int(n * TEST_SPLIT)
-    n_train = n - n_val - n_test
-    train_ds, val_ds, test_ds = random_split(
-        dataset, [n_train, n_val, n_test],
-        generator=torch.Generator().manual_seed(42),
+    labels = [label for _, label in files]
+    train_files, temp_files, _, temp_labels = train_test_split(
+        files, labels, test_size=VAL_SPLIT + TEST_SPLIT, stratify=labels, random_state=42
     )
+    val_files, test_files, _, _ = train_test_split(
+        temp_files, temp_labels, test_size=TEST_SPLIT / (VAL_SPLIT + TEST_SPLIT), stratify=temp_labels, random_state=42
+    )
+    transform = build_transform()
+    train_ds = GTZANDataset(train_files, transform=transform)
+    val_ds   = GTZANDataset(val_files,   transform=transform)
+    test_ds  = GTZANDataset(test_files,  transform=transform)
 
     # num_workers=0: macOS spawn-based multiprocessing can't import packages in worker processes
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)

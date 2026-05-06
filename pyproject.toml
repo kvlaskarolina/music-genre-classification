@@ -13,6 +13,7 @@ dependencies = [
     "torchaudio>=2.0.0",
     "kagglehub",
     "soundfile",
+    "scikit-learn>=1.0",
     "matplotlib>=3.10.9",
     "ipykernel>=7.2.0",
 ]
